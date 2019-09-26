@@ -36,11 +36,11 @@
 		// Used to quickly access if a position is occupied or not 
 	Collision : Int array[64]
 	
-	// Check is size of board (8 x 8)
+	// Check is size of board (8 x 8) // 2 Player to have separate check arrays
 		// Used to quickly access if position is in position of check
 	Check : bool array[64]
 
-	// Player Pieces of size 16 (16 pieces total)
+	// Player Pieces of size 16 (16 pieces total) // 2 players so 2 groups of 16 (32 total)
 	Pieces : list<sPieces*> p1(16)
 */
 
@@ -98,18 +98,22 @@ private:
 	// Movement vector
 	std::vector<std::pair<int, int>> moveLoc;
 	
-	// Turn Variables
+	// Player Turn Variables
 	int currentPlayer = 0;
 	sPiece* selectedPiece = nullptr;
 
-	// Test game over
-	sPiece* p1King = nullptr;
-	sPiece* p2King = nullptr;
-	bool checkmate = false;
-	bool endTurn = false;
-	bool drawLast = false;
+	// Game Phases
+	enum gamePhase {
+		Setup,
+		PlayerPhase,
+		UpdatePhase,
+		CheckPhase,
+		GameOver
+	} phase;
+
 
 	virtual bool OnUserCreate() {
+		// Clear just incase
 		player1.clear();
 		player2.clear();
 		moveLoc.clear();
@@ -138,9 +142,6 @@ private:
 
 		player1.push_back(new sPiece(KING, 4, 0));
 		player2.push_back(new sPiece(KING, 4, 7));
-		
-		p1King = player1.back();
-		p2King = player2.back();
 
 		// Initialize Collision
 		// Testing Collision
@@ -161,7 +162,6 @@ private:
 		*/
 
 		// Initialize Capture
-		// Since Capture should not be possible in the first turn, set all captures to false
 		for (int i = 0; i < 64; i++) {
 			p1CaptureArr[i] = false;
 			p2CaptureArr[i] = false;
@@ -169,6 +169,8 @@ private:
 
 		updateCaptureZone(player1, p1CaptureArr);
 		updateCaptureZone(player2, p2CaptureArr);
+
+		phase = PlayerPhase;
 
 		return true;
 	}
@@ -471,49 +473,49 @@ private:
 
 			// Check Up
 			checkPos = curPos - 8;
-			if (checkPos >= 0 && checkPos < 64)
+			if (unit->y - 1 >= 0)
 				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
 					moveLoc.push_back(std::make_pair(unit->x, unit->y - 1));
 
 			// Check Up Right
 			checkPos = checkPos + 1;
-			if (checkPos >= 0 && checkPos < 64)
+			if (unit->x + 1 < 8 && unit->y - 1 >= 0)
 				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
 					moveLoc.push_back(std::make_pair(unit->x + 1, unit->y - 1));
 
 			// Check Right
 			checkPos = checkPos + 8;
-			if (checkPos >= 0 && checkPos < 64)
+			if (unit->x + 1 < 8)
 				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
 					moveLoc.push_back(std::make_pair(unit->x + 1, unit->y));
 
 			// Check Down Right
 			checkPos = checkPos + 8;
-			if (checkPos >= 0 && checkPos < 64)
+			if (unit->x + 1 < 8 && unit->y + 1 < 8)
 				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
 					moveLoc.push_back(std::make_pair(unit->x + 1, unit->y + 1));
 
 			// Check Down
 			checkPos = checkPos - 1;
-			if (checkPos >= 0 && checkPos < 64)
+			if (unit->y + 1 < 8)
 				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
 					moveLoc.push_back(std::make_pair(unit->x, unit->y + 1));
 
 			// Check Down Left
 			checkPos = checkPos - 1;
-			if (checkPos >= 0 && checkPos < 64)
+			if (unit->x - 1 >= 0 && unit->y + 1 < 8)
 				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
 					moveLoc.push_back(std::make_pair(unit->x - 1, unit->y + 1));
 
 			// Check Left
 			checkPos = checkPos - 8;
-			if (checkPos >= 0 && checkPos < 64)
+			if (unit->x - 1 >= 0)
 				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
 					moveLoc.push_back(std::make_pair(unit->x - 1, unit->y));
 
 			// Check Up Left
 			checkPos = checkPos - 8;
-			if (checkPos >= 0 && checkPos < 64)
+			if (unit->x - 1 >= 0 && unit->y - 1 >= 0)
 				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
 					moveLoc.push_back(std::make_pair(unit->x - 1, unit->y - 1));
 		}
@@ -900,49 +902,49 @@ private:
 				
 				// Check Up
 				checkPos = pPos - 8;
-				if (checkPos >= 0 && checkPos < 64)
+				if (p->y - 1 >= 0)
 					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
 						updateArr[checkPos] = true;
-				
+
 				// Check Up Right
 				checkPos = checkPos + 1;
-				if (checkPos >= 0 && checkPos < 64)
+				if (p->x + 1 < 8 && p->y - 1 >= 0)
 					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
 						updateArr[checkPos] = true;
 
 				// Check Right
 				checkPos = checkPos + 8;
-				if (checkPos >= 0 && checkPos < 64)
+				if (p->x + 1 < 8)
 					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
 						updateArr[checkPos] = true;
 
 				// Check Down Right
 				checkPos = checkPos + 8;
-				if (checkPos >= 0 && checkPos < 64)
+				if (p->x + 1 < 8 && p->y + 1 < 8)
 					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
 						updateArr[checkPos] = true;
 
 				// Check Down
 				checkPos = checkPos - 1;
-				if (checkPos >= 0 && checkPos < 64)
+				if (p->y + 1 < 8)
 					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
 						updateArr[checkPos] = true;
-				
+
 				// Check Down Left
 				checkPos = checkPos - 1;
-				if (checkPos >= 0 && checkPos < 64)
+				if (p->x - 1 >= 0 && p->y + 1 < 8)
 					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
 						updateArr[checkPos] = true;
 
 				// Check Left
 				checkPos = checkPos - 8;
-				if (checkPos >= 0 && checkPos < 64)
+				if (p->x - 1 >= 0)
 					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
 						updateArr[checkPos] = true;
 
 				// Check Up Left
 				checkPos = checkPos - 8;
-				if (checkPos >= 0 && checkPos < 64)
+				if (p->x - 1 >= 0 && p->y - 1 >= 0)
 					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
 						updateArr[checkPos] = true;
 			}
@@ -951,84 +953,93 @@ private:
 	}
 
 	virtual bool OnUserUpdate(float fElapsedTime) {
-		// Inputs
-		if (IsFocused()) {
-			if (!checkmate) {
+
+		// Game Phases
+		switch (phase) {
+
+		// Game Reset
+		/*
+		case (Setup) : {
+			setupGame();
+			phase = PlayerPhase;
+		}
+	
+		break;
+
+		*/
+
+		case (PlayerPhase): {
+
+			// Inputs
+			// Is window in focus
+			if (IsFocused()) {
+				// Left click
 				if (GetMouse(0).bPressed) {
+
+					// Mouse position
+					// divided by 16 (bit shift 4) to find proper location in data structure space
 					int posX = (GetMouseX() >> 4);
 					int posY = (GetMouseY() >> 4);
 
-					// Logic
+					// =================== Logic ===============================
+
+					// Is piece selected
 					if (selectedPiece != nullptr) {
 						// Check if same unit
 						if (posX == selectedPiece->x && posY == selectedPiece->y) {
+							// Deselect unit
 							selectedPiece = nullptr;
 
 							// Clear previous valid unit movement locations
 							moveLoc.clear();
 						}
 
+						// Clicked somewhere else
 						else {
 
-							bool captured = false;
-
-							// Check if move is valid
+							// Check if move is in valid movements
 							for (auto change : moveLoc) {
+
+								// Movement is valid
 								if (change.first == posX && change.second == posY) {
-									// Captured Enemy?
-									if (collisionArr[posY * nWidth + posX] == (currentPlayer == 0 ? 2 : 1))
-										captured = true;
+
+									// Collision with enemy
+									if (collisionArr[posY * nWidth + posX] == (currentPlayer == 0 ? 2 : 1)) {
+										// Find Enemy piece and get rid of it
+										auto it = (currentPlayer == 1) ? player1.begin() : player2.begin();
+										for (auto& p : (currentPlayer == 1) ? player1 : player2) {
+											if (p->x == posX && p->y == posY) {
+												(currentPlayer == 1) ? player1.erase(it) : player2.erase(it);
+												break;
+											}
+											it++;
+										}
+									}
 
 									// Update collisions
 									collisionArr[selectedPiece->y * nWidth + selectedPiece->x] = 0;
 									collisionArr[posY * nWidth + posX] = currentPlayer + 1;
+
 									// Update Unit position
 									selectedPiece->x = posX;
 									selectedPiece->y = posY;
 
 									// If first movement, set moved to true
-									if (selectedPiece->moved == false)
+									if (!selectedPiece->moved)
 										selectedPiece->moved = true;
 
 									// Clear selection
 									selectedPiece = nullptr;
+
 									// clear movement tiles
 									moveLoc.clear();
 
-									endTurn = true;
+									phase = UpdatePhase;
 
+									break;
 								}
 							}
-
-							// Captured an enemy
-							if (captured) {
-								// Find Enemy piece and get rid of it
-								auto it = (currentPlayer == 1) ? player1.begin() : player2.begin();
-								for (auto& p : (currentPlayer == 1) ? player1 : player2) {
-									if (p->x == posX && p->y == posY) {
-										(currentPlayer == 1) ? player1.erase(it) : player2.erase(it);
-										break;
-									}
-									it++;
-								}
-
-								endTurn = true;
-							}
-							/*
-							// Check if Pawn reached end
-							if (selectedPiece->type == PAWN) {
-								// Player 1 reach end
-								if (selectedPiece->y == 7 && currentPlayer == 0) {
-									// Give option for chess piece
-								}
-								// Player 2 reach end
-								if (selectedPiece->y == 0 && currentPlayer == 1) {
-									// Give  option for chess piece
-								}
-							}*/
-
 						}
-
 					}
 
 					// No Piece selected
@@ -1055,8 +1066,11 @@ private:
 						}
 						*/
 						// Condensed form of above statement less lines, but a bit more complex
+						// Find if piece exist in click location
 						for (auto& p : (currentPlayer == 1 ? player2 : player1)) {
+							// Piece found
 							if (p->x == posX && p->y == posY) {
+								// select piece
 								selectedPiece = p;
 
 								// Find valid Movement zones
@@ -1068,39 +1082,83 @@ private:
 				}
 			}
 		}
+		break;
 
-
-		// Game Logic turn stuff
-		if (endTurn) {
-			// Checkmate?
-			moveLoc.clear();
-
-			if (currentPlayer == 0)
-				findValidMoves(player1.back(), p1CaptureArr);
-			if (currentPlayer == 1)
-				findValidMoves(player2.back(), p2CaptureArr);
-
-			if (moveLoc.empty()) {
-				checkmate = true;
-				drawLast = true;
-			}
-			if (!checkmate) {
-				// Next Player
-				currentPlayer = (currentPlayer == 0 ? 1 : 0);
-				// Update Capture arrays
-				updateCaptureZone(player1, p1CaptureArr);
-				updateCaptureZone(player2, p2CaptureArr);
+		case (UpdatePhase): {
+			// Update Capture Zone
+			updateCaptureZone(player1, p1CaptureArr);
+			updateCaptureZone(player2, p2CaptureArr);
+			
+			// Which Player to Update?
+			// Player 1
+			if (currentPlayer == 0) {
 
 				moveLoc.clear();
+				// Find if King can move
+				findValidMoves(player2.back(), p1CaptureArr);
 
-				endTurn = false;
+				// Enemy King can still move
+				if (!moveLoc.size() == 0) {
+					// Is enemy King in Capture Zone
+					if (p1CaptureArr[player2.back()->y * nWidth + player2.back()->x])
+						phase = CheckPhase;
+
+					// Check player
+					else
+						phase = PlayerPhase;
+				}
+
+				// Checkmate
+				else {
+					phase = GameOver;
+				}
 			}
+
+			// Player 2
+			if (currentPlayer == 1) {
+
+				moveLoc.clear();
+				// Find if enemy king movement
+				findValidMoves(player1.back(), p2CaptureArr);
+
+				// Enemy King can still move
+				if (!moveLoc.empty()) {
+					// Is enemy King in Capture Zone
+					if (p2CaptureArr[player1.back()->y * nWidth + player1.back()->x])
+						phase = CheckPhase;
+
+					// Check player
+					else
+						phase = PlayerPhase;
+				}
+
+				// Checkmate
+				else {
+					phase = GameOver;
+				}
+			}
+
+			// Clear
+			moveLoc.clear();
+
+			if (phase != GameOver) {
+				currentPlayer = (currentPlayer == 0 ? 1 : 0);
+			}
+
+		}
+		break;
+
+		case (CheckPhase): {
+			phase = PlayerPhase;
+		}
+		break;
+
 		}
 
 		// Draw
-		// Draw Board
-		// While not checkmated
-		if (!checkmate) {
+		switch (phase) {
+		case (PlayerPhase): {
+			// Draw Board
 			for (int i = 0; i < nWidth; i++) {
 				for (int j = 0; j < nHeight; j++) {
 					// Chessboard color coding is achieved by logical NOR where either the mod of 2 of x and y is 1 or 0
@@ -1115,6 +1173,30 @@ private:
 			if (selectedPiece != nullptr)
 				FillRect((selectedPiece->x << 4) + 1, (selectedPiece->y << 4) + 1, 14, 14, olc::YELLOW);
 
+			// Draw Player 1 Pieces
+			for (auto& piece : player1) {
+				FillRect(piece->x * 16 + 4, piece->y * 16 + 4, 8, 8, olc::BLUE);
+			}
+
+			// Player 2 Pieces
+			for (auto& piece : player2) {
+				FillRect(piece->x * 16 + 4, piece->y * 16 + 4, 8, 8, olc::RED);
+			}
+
+		}
+
+		break;
+
+		// Draw the Board 1 more time
+		case (UpdatePhase): {
+			// Draw Board
+			for (int i = 0; i < nWidth; i++) {
+				for (int j = 0; j < nHeight; j++) {
+					// Chessboard color coding is achieved by logical NOR where either the mod of 2 of x and y is 1 or 0
+					FillRect(i << 4, j << 4, 16, 16, (i % 2 == j % 2) ? olc::BLACK : olc::WHITE);
+				}
+			}
+
 			// Draw Pieces
 			for (auto& piece : player1) {
 				FillRect(piece->x * 16 + 4, piece->y * 16 + 4, 8, 8, olc::BLUE);
@@ -1123,41 +1205,37 @@ private:
 			for (auto& piece : player2) {
 				FillRect(piece->x * 16 + 4, piece->y * 16 + 4, 8, 8, olc::RED);
 			}
+
 		}
+	
+		break;
 
-		else {
-			if (drawLast) {
-				for (int i = 0; i < nWidth; i++) {
-					for (int j = 0; j < nHeight; j++) {
-						// Chessboard color coding is achieved by logical NOR where either the mod of 2 of x and y is 1 or 0
-						FillRect(i << 4, j << 4, 16, 16, (i % 2 == j % 2) ? olc::BLACK : olc::WHITE);
-					}
-				}
-
-				// Draw Valid Spaces
-				for (auto& sp : moveLoc)
-					FillRect((sp.first << 4) + 1, (sp.second << 4) + 1, 14, 14, olc::GREEN);
-
-				if (selectedPiece != nullptr)
-					FillRect((selectedPiece->x << 4) + 1, (selectedPiece->y << 4) + 1, 14, 14, olc::YELLOW);
-
-				// Draw Pieces
-				for (auto& piece : player1) {
-					FillRect(piece->x * 16 + 4, piece->y * 16 + 4, 8, 8, olc::BLUE);
-				}
-
-				for (auto& piece : player2) {
-					FillRect(piece->x * 16 + 4, piece->y * 16 + 4, 8, 8, olc::RED);
-				}
-
-				drawLast = false;
-			}
-
+		/*
+		case (CheckPhase) :
+			// Draw Text Box
 			FillRect(21, 48, 87, 16, olc::DARK_GREY);
 			FillRect(23, 50, 83, 12, olc::Pixel(100, 100, 200));
 
+			// Draw String
+			DrawString(25, 52, "CHECK", olc::WHITE, 1);
+
+			break;
+			*/
+
+		// Game Over Screen
+		case (GameOver): {
+			// Draw Text Box
+			FillRect(21, 48, 87, 16, olc::DARK_GREY);
+			FillRect(23, 50, 83, 12, olc::Pixel(100, 100, 200));
+
+			// Draw String
 			DrawString(25, 52, "CHECKMATE!", olc::WHITE, 1);
 		}
+
+		break;
+
+		}
+
 		return true;
 	}
 
