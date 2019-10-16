@@ -47,7 +47,7 @@
 
 #define OLC_PGE_APPLICATION
 #include "PixelGameEngine.h"
-//#include "Pieces.h"
+#include "Pieces.h"
 
 class Chess : public olc::PixelGameEngine {
 public:
@@ -60,34 +60,10 @@ private:
 	// Board
 	int nWidth = 8;
 	int nHeight = 8;
-
-	// Chess Pieces
-	enum pieceType {
-		PAWN,
-		ROOK,
-		KNIGHT,
-		BISHOP,
-		QUEEN,
-		KING
-	};
 	
-	struct sPiece {
-		int type;
-		int x;
-		int y;
-		bool moved;
-
-		sPiece(int ntype, int nx, int ny, bool firstMove = false) {
-			type = ntype;
-			x = nx;
-			y = ny;
-			moved = firstMove;
-		}
-	};
-
 	// Player Variables
-	std::list<sPiece*> player1;
-	std::list<sPiece*> player2;
+	std::list<cPiece*> player1;
+	std::list<cPiece*> player2;
 	
 	bool p1CaptureArr[64];
 	bool p2CaptureArr[64];
@@ -100,7 +76,7 @@ private:
 	
 	// Player Turn Variables
 	int currentPlayer = 0;
-	sPiece* selectedPiece = nullptr;
+	cPiece* selectedPiece = nullptr;
 
 	// Game Phases
 	enum gamePhase {
@@ -137,18 +113,14 @@ private:
 		*/
 		// Black pieces bot, White pieces top Queens places on same color tile as the player's pieces
 		// Board tiles go white, black, white, black
-		player1.push_back(new sPiece(QUEEN, 3, 0));
-		player2.push_back(new sPiece(QUEEN, 3, 7));
-
-		player1.push_back(new sPiece(KING, 4, 0));
-		player2.push_back(new sPiece(KING, 4, 7));
+		player1.push_back(new Bishop(3, 3));
 
 		// Initialize Collision
 		// Testing Collision
-		collisionArr[3] = 1;
-		collisionArr[4] = 1;
-		collisionArr[59] = 2;
-		collisionArr[60] = 2;
+		collisionArr[27] = 1;
+		//collisionArr[4] = 1;
+		//collisionArr[59] = 2;
+		//collisionArr[60] = 2;
 
 		/* Quick Collision
 		for (int i = 0; i < 8; i++) {			
@@ -168,361 +140,15 @@ private:
 		}
 
 		updateCaptureZone(player1, p1CaptureArr);
-		updateCaptureZone(player2, p2CaptureArr);
+		//updateCaptureZone(player2, p2CaptureArr);
 
 		phase = PlayerPhase;
 
 		return true;
 	}
 
-
-	// Function to find valid movement location
-	// Parameter: take selected unit
-	// Output: valid pair location
-	void findValidMoves(sPiece* unit, bool *checkZone) {
-		// Collision Location
-		int curPos = unit->y * nWidth + unit->x;
-		int enemy = currentPlayer == 0 ? 2 : 1;
-		int ally = currentPlayer + 1;
-
-		if (unit->type == PAWN) {
-			int moveUp = currentPlayer == 0 ? 1 : -1;
-			int colMoveUp = (moveUp * 8) + curPos;
-
-			// Normal Movement
-			if (collisionArr[colMoveUp] == 0) {
-				moveLoc.push_back(std::make_pair(unit->x, unit->y + moveUp));
-
-				// Starting Movement (move up 2 spaces if no pieces in front)
-				if (!unit->moved && collisionArr[colMoveUp + (8 * moveUp)] == 0)
-					moveLoc.push_back(std::make_pair(unit->x, unit->y + (2 * moveUp)));
-			}
-			// Enemy Captures
-			if (collisionArr[colMoveUp - 1] == enemy)
-				moveLoc.push_back(std::make_pair(unit->x - 1, unit->y + moveUp));
-			if (collisionArr[colMoveUp + 1] == enemy)
-				moveLoc.push_back(std::make_pair(unit->x + 1, unit->y + moveUp));
-
-		}
-
-		if (unit->type == ROOK) {
-			// Right
-			for (int i = 1; i < 8 - unit->x; i++) {
-				// If free space
-				if (collisionArr[curPos + i] == 0)
-					moveLoc.push_back(std::make_pair(unit->x + i, unit->y));
-				// If player piece
-				if (collisionArr[curPos + i] == ally)
-					break;
-				// If enemy piece
-				if (collisionArr[curPos + i] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x + i, unit->y));
-					break;
-				}
-			}
-
-			// Left
-			for (int i = 1; i <= unit->x; i++) {
-				if (collisionArr[curPos - i] == 0)
-					moveLoc.push_back(std::make_pair(unit->x - i, unit->y));
-				if (collisionArr[curPos - i] == ally)
-					break;
-				if (collisionArr[curPos - i] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x - i, unit->y));
-					break;
-				}
-			}
-			
-			// Down
-			for (int i = 1; i < 8 - unit->y; i++) {
-				if (collisionArr[curPos + (i * nWidth)] == 0)
-					moveLoc.push_back(std::make_pair(unit->x, unit->y + i));
-				if (collisionArr[curPos + (i * nWidth)] == ally)
-					break;
-				if (collisionArr[curPos + (i * nWidth)] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x, unit->y + i));
-					break;
-				}
-			}
-			
-			// Up
-			for (int i = 1; i <= unit->y; i++) {
-				if (collisionArr[curPos - (i * nWidth)] == 0)
-					moveLoc.push_back(std::make_pair(unit->x, unit->y - i));
-				if (collisionArr[curPos - (i * nWidth)] == ally)
-					break;
-				if (collisionArr[curPos - (i * nWidth)] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x, unit->y - i));
-					break;
-				}
-			}
-			
-		}
-
-		if (unit->type == KNIGHT) {
-			// Up Left // Up 2 spaces (- (2 * 8)), Left 1 space (- 1)
-			int boundCheck = curPos - (2 * 8) - 1;
-			// Check if in bound first
-			if (boundCheck >= 0 && boundCheck < 64)
-				if (collisionArr[boundCheck] == 0 || collisionArr[boundCheck] == enemy)
-					moveLoc.push_back(std::make_pair(unit->x - 1, unit->y - 2));
-
-			// Up Right // Up 2 spaces (- (2 * 8)), Right 1 space (+ 1)
-			boundCheck = curPos - (2 * 8) + 1;
-			// Check if in bound first
-			if (boundCheck >= 0 && boundCheck < 64)
-				if (collisionArr[boundCheck] == 0 || collisionArr[boundCheck] == enemy)
-					moveLoc.push_back(std::make_pair(unit->x + 1, unit->y - 2));
-			
-			// Right Up // Right 2 spaces ( + 2), Up 1 space (- 8)
-			boundCheck = curPos + 2 - 8;
-			// Check if in bound first
-			if (boundCheck >= 0 && boundCheck < 64)
-				if (collisionArr[boundCheck] == 0 || collisionArr[boundCheck] == enemy)
-					moveLoc.push_back(std::make_pair(unit->x + 2, unit->y - 1));
-			
-			// Right Down // Right 2 space (+ 2), Down 1 space (+ 8)
-			boundCheck = curPos + 2 + 8;
-			// Check if in bound first
-			if (boundCheck >= 0 && boundCheck < 64)
-				if (collisionArr[boundCheck] == 0 || collisionArr[boundCheck] == enemy)
-					moveLoc.push_back(std::make_pair(unit->x + 2, unit->y + 1));
-
-			// Down Right // Down 2 spaces (+ (2 * 8)), Right 1 space (+ 1)
-			boundCheck = curPos + (2 * 8) + 1;
-			// Check if in bound first
-			if (boundCheck >= 0 && boundCheck < 64)
-				if (collisionArr[boundCheck] == 0 || collisionArr[boundCheck] == enemy)
-					moveLoc.push_back(std::make_pair(unit->x + 1, unit->y + 2));
-
-			// Down Left // Down 2 spaces (+ (2 * 8)), Left 1 space (- 1)
-			boundCheck = curPos + (2 * 8) + 1;
-			// Check if in bound first
-			if (boundCheck >= 0 && boundCheck < 64)
-				if (collisionArr[boundCheck] == 0 || collisionArr[boundCheck] == enemy)
-					moveLoc.push_back(std::make_pair(unit->x - 1, unit->y + 2));
-			
-			// Left Down // Left 2 spaces ( - 2), Down 1 space ( + 8)
-			boundCheck = curPos - 2 + 8;
-			// Check if in bound first
-			if (boundCheck >= 0 && boundCheck < 64)
-				if (collisionArr[boundCheck] == 0 || collisionArr[boundCheck] == enemy)
-					moveLoc.push_back(std::make_pair(unit->x - 2, unit->y + 1));
-			
-			// Left Up // Left 2 spaces ( - 2), Up 1 spaces( - 8)
-			boundCheck = curPos - 2 - 8;
-			// Check if in bound first
-			if (boundCheck >= 0 && boundCheck < 64)
-				if (collisionArr[boundCheck] == 0 || collisionArr[boundCheck] == enemy)
-					moveLoc.push_back(std::make_pair(unit->x - 2, unit->y - 1));
-		}
-
-		if (unit->type == BISHOP) {
-			// Top Left Diagonal
-			for (int i = 1; (i <= unit->x) && (i <= unit->y); i++) {
-				if (collisionArr[curPos - (i * nWidth) - i] == 0)
-					moveLoc.push_back(std::make_pair(unit->x - i, unit->y - i));
-				if (collisionArr[curPos - (i * nWidth) - i] == ally)
-					break;
-				if (collisionArr[curPos - (i * nWidth) - i] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x - i, unit->y - i));
-					break;
-				}
-			}
-
-			// Top Right Diagonal
-			for (int i = 1; (i < 8 - unit->x) && (i <= unit->y); i++) {
-				if (collisionArr[curPos - (i * nWidth) + i] == 0)
-					moveLoc.push_back(std::make_pair(unit->x + i, unit->y - i));
-				if (collisionArr[curPos - (i * nWidth) + i] == ally)
-					break;
-				if (collisionArr[curPos - (i * nWidth) + i] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x + i, unit->y - i));
-					break;
-				}
-			}
-
-			// Bottom Left Diagonal
-			for (int i = 1; (i <= unit->x) && (i < 8 - unit->y); i++) {
-				if (collisionArr[curPos + (i * nWidth) - i] == 0)
-					moveLoc.push_back(std::make_pair(unit->x - i, unit->y + i));
-				if (collisionArr[curPos + (i * nWidth) - i] == ally)
-					break;
-				if (collisionArr[curPos + (i * nWidth) - i] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x - i, unit->y + i));
-					break;
-				}
-			}
-
-			// Bottom Right Diagonal
-			for (int i = 1; (i < 8 - unit->x) && (i < 8 - unit->y); i++) {
-				if (collisionArr[curPos + (i * nWidth) + i] == 0)
-					moveLoc.push_back(std::make_pair(unit->x + i, unit->y + i));
-				if (collisionArr[curPos + (i * nWidth) + i] == ally)
-					break;
-				if (collisionArr[curPos + (i * nWidth) + i] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x + i, unit->y + i));
-					break;
-				}
-			}
-		}
-
-		if (unit->type == QUEEN) {
-			// Up Left Diagonal
-			for (int i = 1; (i <= unit->x) && (i <= unit->y); i++) {
-				if (collisionArr[curPos - (i * nWidth) - i] == 0)
-					moveLoc.push_back(std::make_pair(unit->x - i, unit->y - i));
-				if (collisionArr[curPos - (i * nWidth) - i] == ally)
-					break;
-				if (collisionArr[curPos - (i * nWidth) - i] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x - i, unit->y - i));
-					break;
-				}
-			}
-
-			// Up
-			for (int i = 1; i <= unit->y; i++) {
-				if (collisionArr[curPos - (i * nWidth)] == 0)
-					moveLoc.push_back(std::make_pair(unit->x, unit->y - i));
-				if (collisionArr[curPos - (i * nWidth)] == ally)
-					break;
-				if (collisionArr[curPos - (i * nWidth)] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x, unit->y - i));
-					break;
-				}
-			}
-
-			// Up Right Diagonal
-			for (int i = 1; (i < 8 - unit->x) && (i <= unit->y); i++) {
-				if (collisionArr[curPos - (i * nWidth) + i] == 0)
-					moveLoc.push_back(std::make_pair(unit->x + i, unit->y - i));
-				if (collisionArr[curPos - (i * nWidth) + i] == ally)
-					break;
-				if (collisionArr[curPos - (i * nWidth) + i] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x + i, unit->y - i));
-					break;
-				}
-			}
-
-			// Right
-			for (int i = 1; i < 8 - unit->x; i++) {
-				// If free space
-				if (collisionArr[curPos + i] == 0)
-					moveLoc.push_back(std::make_pair(unit->x + i, unit->y));
-				// If player piece
-				if (collisionArr[curPos + i] == ally)
-					break;
-				// If enemy piece
-				if (collisionArr[curPos + i] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x + i, unit->y));
-					break;
-				}
-			}
-
-			// Bottom Right Diagonal
-			for (int i = 1; (i < 8 - unit->x) && (i < 8 - unit->y); i++) {
-				if (collisionArr[curPos + (i * nWidth) + i] == 0)
-					moveLoc.push_back(std::make_pair(unit->x + i, unit->y + i));
-				if (collisionArr[curPos + (i * nWidth) + i] == ally)
-					break;
-				if (collisionArr[curPos + (i * nWidth) + i] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x + i, unit->y + i));
-					break;
-				}
-			}
-
-			// Down
-			for (int i = 1; i < 8 - unit->y; i++) {
-				if (collisionArr[curPos + (i * nWidth)] == 0)
-					moveLoc.push_back(std::make_pair(unit->x, unit->y + i));
-				if (collisionArr[curPos + (i * nWidth)] == ally)
-					break;
-				if (collisionArr[curPos + (i * nWidth)] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x, unit->y + i));
-					break;
-				}
-			}
-
-			// Bottom Left Diagonal
-			for (int i = 1; (i <= unit->x) && (i < 8 - unit->y); i++) {
-				if (collisionArr[curPos + (i * nWidth) - i] == 0)
-					moveLoc.push_back(std::make_pair(unit->x - i, unit->y + i));
-				if (collisionArr[curPos + (i * nWidth) - i] == ally)
-					break;
-				if (collisionArr[curPos + (i * nWidth) - i] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x - i, unit->y + i));
-					break;
-				}
-			}
-
-			// Left
-			for (int i = 1; i <= unit->x; i++) {
-				if (collisionArr[curPos - i] == 0)
-					moveLoc.push_back(std::make_pair(unit->x - i, unit->y));
-				if (collisionArr[curPos - i] == ally)
-					break;
-				if (collisionArr[curPos - i] == enemy) {
-					moveLoc.push_back(std::make_pair(unit->x - i, unit->y));
-					break;
-				}
-			}
-		}
-
-		if (unit->type == KING) {
-			int checkPos = 0;
-
-			// Check Up
-			checkPos = curPos - 8;
-			if (unit->y - 1 >= 0)
-				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
-					moveLoc.push_back(std::make_pair(unit->x, unit->y - 1));
-
-			// Check Up Right
-			checkPos = checkPos + 1;
-			if (unit->x + 1 < 8 && unit->y - 1 >= 0)
-				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
-					moveLoc.push_back(std::make_pair(unit->x + 1, unit->y - 1));
-
-			// Check Right
-			checkPos = checkPos + 8;
-			if (unit->x + 1 < 8)
-				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
-					moveLoc.push_back(std::make_pair(unit->x + 1, unit->y));
-
-			// Check Down Right
-			checkPos = checkPos + 8;
-			if (unit->x + 1 < 8 && unit->y + 1 < 8)
-				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
-					moveLoc.push_back(std::make_pair(unit->x + 1, unit->y + 1));
-
-			// Check Down
-			checkPos = checkPos - 1;
-			if (unit->y + 1 < 8)
-				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
-					moveLoc.push_back(std::make_pair(unit->x, unit->y + 1));
-
-			// Check Down Left
-			checkPos = checkPos - 1;
-			if (unit->x - 1 >= 0 && unit->y + 1 < 8)
-				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
-					moveLoc.push_back(std::make_pair(unit->x - 1, unit->y + 1));
-
-			// Check Left
-			checkPos = checkPos - 8;
-			if (unit->x - 1 >= 0)
-				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
-					moveLoc.push_back(std::make_pair(unit->x - 1, unit->y));
-
-			// Check Up Left
-			checkPos = checkPos - 8;
-			if (unit->x - 1 >= 0 && unit->y - 1 >= 0)
-				if (collisionArr[checkPos] != ally && !checkZone[checkPos])
-					moveLoc.push_back(std::make_pair(unit->x - 1, unit->y - 1));
-		}
-	}
-
 	// Function to update capture
-	void updateCaptureZone(std::list<sPiece*> player, bool *updateArr) {
+	void updateCaptureZone(std::list<cPiece*> player, bool *updateArr) {
 		// Enemy and Ally
 		int enemy = currentPlayer == 0 ? 2 : 1;
 		int ally = currentPlayer + 1;
@@ -532,422 +158,7 @@ private:
 			updateArr[i] = false;
 
 		for (auto& p : player) {
-			int pPos = p->y * nWidth + p->x;
-			
-			if (p->type == PAWN) {
-				// Adjust Pawn direction depending on player
-				int direction = currentPlayer == 0 ? 1 : -1;
-
-				// Left Diagonal
-				// Check Collision and Position
-				if (collisionArr[pPos + (8 * direction) - 1] != ally && p->x != 0) {
-					// Check if already true
-					if (updateArr[pPos + (8 * direction) - 1])
-						updateArr[pPos + (8 * direction) - 1] = true;
-				}
-
-				// Right Diagonal
-				// Check Collision and Position
-				if (collisionArr[pPos + (8 * direction) + 1] != ally && p->x != 7) {
-					// Check if already true
-					if (updateArr[pPos + (8 * direction) - 1])
-						updateArr[pPos + (8 * direction) - 1] = true;
-				}
-			}
-
-			if (p->type == ROOK) {
-				// Used to calculate position to check
-				int checkPos = 0;
-
-				// Check UP
-				for (int i = 1; i <= p->y; i++) {
-					checkPos = pPos - (8 * i);
-
-					// Check Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Check if Enemy
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-
-				// Check DOWN
-				for (int i = 1; i < 8 - p->y; i++) {
-					checkPos = pPos + (8 * i);
-
-					// Check Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Check if Enemy
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-
-				// Check LEFT
-				for (int i = 1; i <= p->x; i++) {
-					checkPos = pPos - i;
-
-					// Check Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Check if Enemy
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-
-				// Check RIGHT
-				for (int i = 1; i < 8 - p->x; i++) {
-					checkPos = pPos + i;
-
-					// Check Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Check if Enemy
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-			}
-
-			if (p->type == KNIGHT) {
-				if (p->y - 2 >= 0) {
-					// Top Left (2 Up, 1 Left == - 16 - 1)
-					if (p->x - 1 >= 0)
-						if (collisionArr[pPos - 16 - 1] != ally && !updateArr[pPos - 16 - 1])
-							updateArr[pPos - 16 - 1] = true;
-					// Top Right (2 Up, 1 Right == - 16 + 1)
-					if (p->x + 1 < 8)
-						if (collisionArr[pPos - 16 + 1] != ally && !updateArr[pPos - 16 + 1])
-							updateArr[pPos - 16 + 1] = true;
-				}
-
-				if (p->x + 2 < 8) {
-					// Right Up (2 Right, 1 Up == + 2 - 8)
-					if (p->y - 1 >= 0)
-						if (collisionArr[pPos + 2 - 8] != ally && !updateArr[pPos + 2 - 8])
-							updateArr[pPos + 2 - 8] = true;
-					// Right Down (2 Right, 1 Down == + 2 + 8)
-					if (p->y + 1 < 8)
-						if (collisionArr[pPos + 2 + 8] != ally && !updateArr[pPos + 2 + 8])
-							updateArr[pPos + 2 + 8] = true;
-				}
-
-				if (p->y + 2 < 8) {
-					// Bottom Left (2 Down, 1 Left == + 16 - 1)
-					if (p->x - 1 >= 0)
-						if (collisionArr[pPos + 16 - 1] != ally && !updateArr[pPos + 16 - 1])
-							updateArr[pPos + 16 - 1] = true;
-					// Top Right (2 Down, 1 Right == + 16 + 1)
-					if (p->x + 1 < 8)
-						if (collisionArr[pPos + 16 + 1] != ally && !updateArr[pPos + 16 + 1])
-							updateArr[pPos + 16 + 1] = true;
-				}
-
-				if (p->x - 2 >= 0) {
-					// Left Up (2 Left, 1 Up == - 2 - 8)
-					if (p->y - 1 >= 0)
-						if (collisionArr[pPos - 2 - 8] != ally && !updateArr[pPos - 2 - 8])
-							updateArr[pPos - 2 - 8] = true;
-					// Left Down (2 Left, 1 Down == - 2 + 8)
-					if (p->y + 1 < 8)
-						if (collisionArr[pPos - 2 + 8] != ally && !updateArr[pPos - 2 + 8])
-							updateArr[pPos - 2 + 8] = true;
-				}
-			}
-
-			if (p->type == BISHOP) {
-				// Used to calculate position to check
-				int checkPos = 0;
-
-				// Top Left Diagonal
-				for (int i = 1; i <= p->x && i <= p->y; i++) {
-					checkPos = pPos - (i * (8 + 1));
-					//Check for Ally Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Enemy Collision
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-
-				// Top Right Diagonal
-				for (int i = 1; i < 8 - p->x && i <= p->y; i++) {
-					checkPos = pPos - (i * (8 - 1));
-					//Check for Ally Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Enemy Collision
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-
-				// Bottom Left Diagonal
-				for (int i = 1; i <= p->x && i < 8 - p->y; i++) {
-					checkPos = pPos + (i * (8 - 1));
-					//Check for Ally Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Enemy Collision
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-
-				// Bottom Right Diagonal
-				for (int i = 1; i < 8 - p->x && i < 8 - p->y; i++) {
-					checkPos = pPos + (i * (8 + 1));
-					//Check for Ally Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Enemy Collision
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-			}
-			
-			if (p->type == QUEEN) {
-				// Used to calculate position to check
-				int checkPos = 0;
-				
-				// Check UP
-				for (int i = 1; i <= p->y; i++) {
-					checkPos = pPos - (8 * i);
-
-					// Check Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Check if Enemy
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-
-				// Top Right Diagonal
-				for (int i = 1; i < 8 - p->x && i <= p->y; i++) {
-					checkPos = pPos - (i * (8 - 1));
-
-					//Check for Ally Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Enemy Collision
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-
-				// Check RIGHT
-				for (int i = 1; i < 8 - p->x; i++) {
-					checkPos = pPos + i;
-
-					// Check Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Check if Enemy
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-
-				// Bottom Right Diagonal
-				for (int i = 1; i < 8 - p->x && i < 8 - p->y; i++) {
-					checkPos = pPos + (i * (8 + 1));
-					//Check for Ally Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Enemy Collision
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-
-				// Check DOWN
-				for (int i = 1; i < 8 - p->y; i++) {
-					checkPos = pPos + (8 * i);
-
-					// Check Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Check if Enemy
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-
-				// Bottom Left Diagonal
-				for (int i = 1; i <= p->x && i < 8 - p->y; i++) {
-					checkPos = pPos + (i * (8 - 1));
-					//Check for Ally Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Enemy Collision
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-
-				// Check LEFT
-				for (int i = 1; i <= p->x; i++) {
-					checkPos = pPos - i;
-
-					// Check Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Check if Enemy
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-				
-				// Top Left Diagonal
-				for (int i = 1; i <= p->x && i <= p->y; i++) {
-					checkPos = pPos - (i * (8 + 1));
-					//Check for Ally Collision
-					if (collisionArr[checkPos] == ally)
-						break;
-
-					else {
-						// Check if already true
-						if (!updateArr[checkPos])
-							updateArr[checkPos] = true;
-						// Enemy Collision
-						if (collisionArr[checkPos] == enemy)
-							break;
-					}
-				}
-			}
-			
-			if (p->type == KING) {
-				int checkPos = 0;
-				
-				// Check Up
-				checkPos = pPos - 8;
-				if (p->y - 1 >= 0)
-					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
-						updateArr[checkPos] = true;
-
-				// Check Up Right
-				checkPos = checkPos + 1;
-				if (p->x + 1 < 8 && p->y - 1 >= 0)
-					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
-						updateArr[checkPos] = true;
-
-				// Check Right
-				checkPos = checkPos + 8;
-				if (p->x + 1 < 8)
-					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
-						updateArr[checkPos] = true;
-
-				// Check Down Right
-				checkPos = checkPos + 8;
-				if (p->x + 1 < 8 && p->y + 1 < 8)
-					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
-						updateArr[checkPos] = true;
-
-				// Check Down
-				checkPos = checkPos - 1;
-				if (p->y + 1 < 8)
-					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
-						updateArr[checkPos] = true;
-
-				// Check Down Left
-				checkPos = checkPos - 1;
-				if (p->x - 1 >= 0 && p->y + 1 < 8)
-					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
-						updateArr[checkPos] = true;
-
-				// Check Left
-				checkPos = checkPos - 8;
-				if (p->x - 1 >= 0)
-					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
-						updateArr[checkPos] = true;
-
-				// Check Up Left
-				checkPos = checkPos - 8;
-				if (p->x - 1 >= 0 && p->y - 1 >= 0)
-					if (collisionArr[checkPos] != ally && !updateArr[checkPos])
-						updateArr[checkPos] = true;
-			}
+			p->updateZones(currentPlayer, collisionArr, updateArr);
 			
 		}
 	}
@@ -1024,9 +235,6 @@ private:
 									selectedPiece->x = posX;
 									selectedPiece->y = posY;
 
-									// If first movement, set moved to true
-									if (!selectedPiece->moved)
-										selectedPiece->moved = true;
 
 									// Clear selection
 									selectedPiece = nullptr;
@@ -1074,7 +282,7 @@ private:
 								selectedPiece = p;
 
 								// Find valid Movement zones
-								findValidMoves(selectedPiece, currentPlayer == 0 ? p2CaptureArr : p1CaptureArr);
+								moveLoc = p->movement(currentPlayer, collisionArr, currentPlayer == 0 ? p2CaptureArr : p1CaptureArr);
 								break;
 							}
 						}
@@ -1085,10 +293,24 @@ private:
 		break;
 
 		case (UpdatePhase): {
+			/*
+			
+				Need to check for Check
+				if (check)
+					if (block)
+				
+				block(playerPieces) {
+					for (&auto p : playerPieces) { 
+						
+						
+					}
+				}
+
+			*/
 			// Update Capture Zone
 			updateCaptureZone(player1, p1CaptureArr);
 			updateCaptureZone(player2, p2CaptureArr);
-			
+			/*
 			// Which Player to Update?
 			// Player 1
 			if (currentPlayer == 0) {
@@ -1144,7 +366,7 @@ private:
 			if (phase != GameOver) {
 				currentPlayer = (currentPlayer == 0 ? 1 : 0);
 			}
-
+			*/
 		}
 		break;
 
