@@ -79,13 +79,22 @@ private:
 	cPiece* selectedPiece = nullptr;
 
 	// Game Phases
-	enum gamePhase {
-		Setup,
-		PlayerPhase,
-		UpdatePhase,
-		CheckPhase,
-		GameOver
+	enum class gamePhase : short {
+		Setup = 0x01,
+		PlayerPhase = 0x02,
+		UpdatePhase = 0x03,
+		CheckPhase = 0x04,
+		GameOver = 0x05
 	} phase;
+
+	enum pieceType {
+		PAWN,
+		ROOK,
+		KNIGHT,
+		BISHOP,
+		QUEEN,
+		KING
+	};
 
 
 	virtual bool OnUserCreate() {
@@ -113,11 +122,13 @@ private:
 		*/
 		// Black pieces bot, White pieces top Queens places on same color tile as the player's pieces
 		// Board tiles go white, black, white, black
-		player1.push_back(new Bishop(3, 3));
+		player2.push_back(new Queen(3, 3, QUEEN));
+		player1.push_back(new King(3, 1, KING));
 
 		// Initialize Collision
 		// Testing Collision
-		collisionArr[27] = 1;
+		collisionArr[27] = 2;
+		collisionArr[11] = 3;
 		//collisionArr[4] = 1;
 		//collisionArr[59] = 2;
 		//collisionArr[60] = 2;
@@ -142,7 +153,7 @@ private:
 		updateCaptureZone(player1, p1CaptureArr);
 		//updateCaptureZone(player2, p2CaptureArr);
 
-		phase = PlayerPhase;
+		phase = gamePhase::PlayerPhase;
 
 		return true;
 	}
@@ -179,7 +190,7 @@ private:
 
 		*/
 
-		case (PlayerPhase): {
+		case (gamePhase::PlayerPhase): {
 
 			// Inputs
 			// Is window in focus
@@ -229,7 +240,10 @@ private:
 
 									// Update collisions
 									collisionArr[selectedPiece->y * nWidth + selectedPiece->x] = 0;
-									collisionArr[posY * nWidth + posX] = currentPlayer + 1;
+									if (selectedPiece->type == KING)
+										collisionArr[posY * nWidth + posX] = currentPlayer + 3;
+									else
+										collisionArr[posY * nWidth + posX] = currentPlayer + 1;
 
 									// Update Unit position
 									selectedPiece->x = posX;
@@ -237,12 +251,12 @@ private:
 
 
 									// Clear selection
-									selectedPiece = nullptr;
+									//selectedPiece = nullptr;
 
 									// clear movement tiles
 									moveLoc.clear();
 
-									phase = UpdatePhase;
+									phase = gamePhase::UpdatePhase;
 
 									break;
 								}
@@ -252,28 +266,6 @@ private:
 
 					// No Piece selected
 					else {
-						/*
-						// Player 2
-						if (currentPlayer) {
-							for (auto& p : player2) {
-								if (p->x == posX && p->y == posY) {
-									selectedPiece = p;
-									break;
-								}
-							}
-						}
-
-						// Player 1
-						else {
-							for (auto& p : player1) {
-								if (p->x == posX && p->y == posY) {
-									selectedPiece = p;
-									break;
-								}
-							}
-						}
-						*/
-						// Condensed form of above statement less lines, but a bit more complex
 						// Find if piece exist in click location
 						for (auto& p : (currentPlayer == 1 ? player2 : player1)) {
 							// Piece found
@@ -292,86 +284,67 @@ private:
 		}
 		break;
 
-		case (UpdatePhase): {
-			/*
+		case (gamePhase::UpdatePhase): {
 			
-				Need to check for Check
-				if (check)
-					if (block)
-				
-				block(playerPieces) {
-					for (&auto p : playerPieces) { 
-						
-						
-					}
-				}
-
-			*/
 			// Update Capture Zone
 			updateCaptureZone(player1, p1CaptureArr);
 			updateCaptureZone(player2, p2CaptureArr);
-			/*
-			// Which Player to Update?
-			// Player 1
-			if (currentPlayer == 0) {
 
-				moveLoc.clear();
-				// Find if King can move
-				findValidMoves(player2.back(), p1CaptureArr);
+			cPiece* checkKing = (currentPlayer == 0) ? player2.front() : player1.front();
+			bool* checkCap = (currentPlayer == 0) ? p1CaptureArr : p2CaptureArr;
+				
+			// Check for check/checkmate
+			// if King is in check
+			if (checkCap[checkKing->y * nWidth + checkKing->x] == currentPlayer + 1) {
+				// Find all of King's moves available
+				std::vector<std::pair<int, int>> kingMoves = checkKing->movement(currentPlayer, collisionArr, checkCap);
 
-				// Enemy King can still move
-				if (!moveLoc.size() == 0) {
-					// Is enemy King in Capture Zone
-					if (p1CaptureArr[player2.back()->y * nWidth + player2.back()->x])
-						phase = CheckPhase;
-
-					// Check player
-					else
-						phase = PlayerPhase;
+				// If no more moves
+				if (kingMoves.empty()) {
+					// Find if another piece can block
+				
 				}
+					
 
-				// Checkmate
+
+				// If King has moves, Next Turn
 				else {
-					phase = GameOver;
+					currentPlayer = (currentPlayer == 0) ? 1 : 0;
+					phase = gamePhase::PlayerPhase;
 				}
 			}
 
-			// Player 2
-			if (currentPlayer == 1) {
+			else {
+				// Check for Stalemate
+				if (checkKing->type == (currentPlayer == 0) ? player1.back()->type : player2.back()->type) {
+					// Find all of King's moves available
+					std::vector<std::pair<int, int>> kingMoves = checkKing->movement(currentPlayer, collisionArr, checkCap);
 
-				moveLoc.clear();
-				// Find if enemy king movement
-				findValidMoves(player1.back(), p2CaptureArr);
-
-				// Enemy King can still move
-				if (!moveLoc.empty()) {
-					// Is enemy King in Capture Zone
-					if (p2CaptureArr[player1.back()->y * nWidth + player1.back()->x])
-						phase = CheckPhase;
-
-					// Check player
-					else
-						phase = PlayerPhase;
+					// If no more moves, Stalemate
+					if (kingMoves.empty())
+						phase = gamePhase::GameOver;
+					
+					
+					// If King has moves, Next Turn
+					else {
+						currentPlayer = (currentPlayer == 0) ? 1 : 0;
+						phase = gamePhase::PlayerPhase;
+					}
 				}
 
-				// Checkmate
+				// Next Player's turn
 				else {
-					phase = GameOver;
+					currentPlayer = (currentPlayer == 0) ? 1 : 0;
+					phase = gamePhase::PlayerPhase;
 				}
 			}
 
-			// Clear
-			moveLoc.clear();
-
-			if (phase != GameOver) {
-				currentPlayer = (currentPlayer == 0 ? 1 : 0);
-			}
-			*/
+			selectedPiece = nullptr;
 		}
 		break;
 
-		case (CheckPhase): {
-			phase = PlayerPhase;
+		case (gamePhase::CheckPhase): {
+			phase = gamePhase::PlayerPhase;
 		}
 		break;
 
@@ -379,7 +352,7 @@ private:
 
 		// Draw
 		switch (phase) {
-		case (PlayerPhase): {
+		case (gamePhase::PlayerPhase): {
 			// Draw Board
 			for (int i = 0; i < nWidth; i++) {
 				for (int j = 0; j < nHeight; j++) {
@@ -410,7 +383,7 @@ private:
 		break;
 
 		// Draw the Board 1 more time
-		case (UpdatePhase): {
+		case (gamePhase::UpdatePhase): {
 			// Draw Board
 			for (int i = 0; i < nWidth; i++) {
 				for (int j = 0; j < nHeight; j++) {
@@ -445,7 +418,7 @@ private:
 			*/
 
 		// Game Over Screen
-		case (GameOver): {
+		case (gamePhase::GameOver): {
 			// Draw Text Box
 			FillRect(21, 48, 87, 16, olc::DARK_GREY);
 			FillRect(23, 50, 83, 12, olc::Pixel(100, 100, 200));

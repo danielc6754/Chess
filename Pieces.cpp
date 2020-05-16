@@ -1,15 +1,16 @@
 #include "Pieces.h"
 
-cPiece::cPiece(int nx, int ny) {
+cPiece::cPiece(int nx, int ny, int ntype) {
 	x = nx;
 	y = ny;
+	type = ntype;
 }
 
  // ######################### PAWN ##################################### //
 
 // Call base constructor to initialize first varibles
 // Additional Setup afterwards
-Pawn::Pawn(int nx, int ny, bool fm) : cPiece(nx, ny) {
+Pawn::Pawn(int nx, int ny, int ntype, bool fm) : cPiece(nx, ny, ntype) {
 	firstMove = fm;
 }
 
@@ -35,9 +36,9 @@ std::vector<std::pair<int, int>> Pawn::movement(int curPlayer, int* collision, b
 			moveLoc.push_back(std::make_pair(x, y + (2 * moveUp)));
 	}
 	// Valid capture zones
-	if (collision[colMoveUp - 1] == enemy)
+	if (collision[colMoveUp - 1] == enemy || collision[colMoveUp - 1] == enemy + 2)
 		moveLoc.push_back(std::make_pair(x - 1, y + moveUp));
-	if (collision[colMoveUp + 1] == enemy)
+	if (collision[colMoveUp + 1] == enemy || collision[colMoveUp - 1] == enemy + 2)
 		moveLoc.push_back(std::make_pair(x + 1, y + moveUp));
 
 	return moveLoc;
@@ -53,28 +54,31 @@ void Pawn::updateZones(int curPlayer, int* collision, bool* oldZone) {
 
 	// Left Diagonal
 	// Check Collision and Position
-	if (collision[pPos + (8 * direction) - 1] != curPlayer + 1 && x != 0) {
-		// Check if already true
-		if (!oldZone[pPos + (8 * direction) - 1])
-			collision[pPos + (8 * direction) - 1] = true;
+	if (x != 0) {
+		if (collision[pPos + (8 * direction) - 1] != curPlayer + 1 || collision[pPos + (8 * direction) - 1] != curPlayer + 3) {
+			// Check if already true
+			if (!oldZone[pPos + (8 * direction) - 1])
+				collision[pPos + (8 * direction) - 1] = true;
+		}
 	}
 
 	// Right Diagonal
 	// Check Collision and Position
-	if (collision[pPos + (8 * direction) + 1] != curPlayer + 1 && x != 7) {
-		// Check if already true
-		if (!collision[pPos + (8 * direction) - 1])
-			collision[pPos + (8 * direction) - 1] = true;
+	if (x != 7) {
+		if (collision[pPos + (8 * direction) + 1] != curPlayer + 1 || collision[pPos + (8 * direction) + 1] != curPlayer + 3) {
+			// Check if already true
+			if (!collision[pPos + (8 * direction) - 1])
+				collision[pPos + (8 * direction) - 1] = true;
+		}
 	}
-	
 }
 
 
 
 // ######################### ROOK ##################################### //
-// Call base constructor to initialize first varibles
-// Additional Setup afterwards
-Rook::Rook(int nx, int ny, bool fm) : cPiece(nx, ny) {
+// Inherits orignal constructor
+// If additional setup is needed for this piece add in
+Rook::Rook(int nx, int ny, int ntype, bool fm) : cPiece(nx, ny, ntype) {
 	firstMove = fm;
 }
 
@@ -92,7 +96,7 @@ std::vector<std::pair<int, int>> Rook::movement(int curPlayer, int* collision, b
 		int checkLoc = curPos - (8 * i);
 
 		// Check Collision
-		if (collision[checkLoc] == ally)
+		if (collision[checkLoc] == ally || collision[checkLoc] == ally + 2)
 			break;
 
 		else {
@@ -100,7 +104,7 @@ std::vector<std::pair<int, int>> Rook::movement(int curPlayer, int* collision, b
 			moveLoc.push_back(std::make_pair(x, y - i));
 
 			// Enemy Collision
-			if (collision[checkLoc] == enemy)
+			if (collision[checkLoc] == enemy || collision[checkLoc] == enemy + 2)
 				break;
 		}
 	}
@@ -110,7 +114,7 @@ std::vector<std::pair<int, int>> Rook::movement(int curPlayer, int* collision, b
 		int checkLoc = curPos + i;
 
 		// Check ally Collision
-		if (collision[checkLoc] == ally)
+		if (collision[checkLoc] == ally || collision[checkLoc] == ally + 2)
 			break;
 
 		else {
@@ -118,7 +122,7 @@ std::vector<std::pair<int, int>> Rook::movement(int curPlayer, int* collision, b
 			moveLoc.push_back(std::make_pair(x + i, y));
 
 			// Enemy Collision
-			if (collision[checkLoc] == enemy)
+			if (collision[checkLoc] == enemy || collision[checkLoc] == enemy + 2)
 				break;
 		}
 	}
@@ -128,7 +132,7 @@ std::vector<std::pair<int, int>> Rook::movement(int curPlayer, int* collision, b
 		int checkLoc = curPos + (8 * i);
 
 		// Check Collision
-		if (collision[checkLoc] == ally)
+		if (collision[checkLoc] == ally || collision[checkLoc] == ally + 2)
 			break;
 
 		else {
@@ -136,7 +140,7 @@ std::vector<std::pair<int, int>> Rook::movement(int curPlayer, int* collision, b
 			moveLoc.push_back(std::make_pair(x, y + i));
 
 			// Enemy Collision
-			if (collision[checkLoc] == enemy)
+			if (collision[checkLoc] == enemy || collision[checkLoc] == enemy + 2)
 				break;
 		}
 	}
@@ -146,7 +150,7 @@ std::vector<std::pair<int, int>> Rook::movement(int curPlayer, int* collision, b
 		int checkLoc = curPos - i;
 
 		// Check Collision
-		if (collision[checkLoc] == ally)
+		if (collision[checkLoc] == ally || collision[checkLoc] == ally + 2)
 			break;
 
 		else {
@@ -154,7 +158,7 @@ std::vector<std::pair<int, int>> Rook::movement(int curPlayer, int* collision, b
 			moveLoc.push_back(std::make_pair(x - i, y));
 
 			// Enemy Collision
-			if (collision[checkLoc] == enemy)
+			if (collision[checkLoc] == enemy || collision[checkLoc] == enemy + 2)
 				break;
 		}
 	}
@@ -176,7 +180,7 @@ void Rook::updateZones(int curPlayer, int* collision, bool* oldZone) {
 		checkPos = pPos - (8 * i);
 
 		// Check Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -252,7 +256,7 @@ void Rook::updateZones(int curPlayer, int* collision, bool* oldZone) {
 
 // Inherits orignal constructor
 // If additional setup is needed for this piece add in
-Knight::Knight(int nx, int ny) : cPiece(nx, ny) {};
+Knight::Knight(int nx, int ny, int ntype) : cPiece(nx, ny, ntype) {};
 
 std::vector<std::pair<int, int>> Knight::movement(int curPlayer, int* collision, bool* checkZones = nullptr) {
 	// return movement vector
@@ -267,11 +271,11 @@ std::vector<std::pair<int, int>> Knight::movement(int curPlayer, int* collision,
 	if (y - 2 >= 0) {
 		// Top Left (2 Up, 1 Left == - 16 - 1)
 		if (x - 1 >= 0)
-			if (collision[curPos - 16 - 1] != ally)
+			if (collision[curPos - 16 - 1] != ally || collision[curPos - 16 - 1] != ally + 2)
 				moveLoc.push_back(std::make_pair(x - 1, y - 2));
 		// Top Right (2 Up, 1 Right == - 16 + 1)
 		if (x + 1 < 8)
-			if (collision[curPos - 16 + 1] != ally)
+			if (collision[curPos - 16 + 1] != ally || collision[curPos - 16 - 1] != ally + 2)
 				moveLoc.push_back(std::make_pair(x + 1, y - 2));
 	}
 
@@ -279,11 +283,11 @@ std::vector<std::pair<int, int>> Knight::movement(int curPlayer, int* collision,
 	if (x + 2 < 8) {
 		// Right Up (2 Right, 1 Up == + 2 - 8)
 		if (y - 1 >= 0)
-			if (collision[curPos + 2 - 8] != ally)
+			if (collision[curPos + 2 - 8] != ally || collision[curPos - 16 - 1] != ally + 2)
 				moveLoc.push_back(std::make_pair(x + 2, y - 1));
 		// Right Down (2 Right, 1 Down == + 2 + 8)
 		if (y + 1 < 8)
-			if (collision[curPos + 2 + 8] != ally)
+			if (collision[curPos + 2 + 8] != ally || collision[curPos - 16 - 1] != ally + 2)
 				moveLoc.push_back(std::make_pair(x + 2, y + 1));
 	}
 
@@ -291,11 +295,11 @@ std::vector<std::pair<int, int>> Knight::movement(int curPlayer, int* collision,
 	if (y + 2 < 8) {
 		// Bottom Left (2 Down, 1 Left == + 16 - 1)
 		if (x - 1 >= 0)
-			if (collision[curPos + 16 - 1] != ally)
+			if (collision[curPos + 16 - 1] != ally || collision[curPos - 16 - 1] != ally + 2)
 				moveLoc.push_back(std::make_pair(x - 1, y + 2));
 		// Bottom Right (2 Down, 1 Right == + 16 + 1)
 		if (x + 1 < 8)
-			if (collision[curPos + 16 + 1] != ally)
+			if (collision[curPos + 16 + 1] != ally || collision[curPos - 16 - 1] != ally + 2)
 				moveLoc.push_back(std::make_pair(x + 1, y + 2));
 	}
 
@@ -303,11 +307,11 @@ std::vector<std::pair<int, int>> Knight::movement(int curPlayer, int* collision,
 	if (x - 2 >= 0) {
 		// Left Up (2 Left, 1 Up == - 2 - 8)
 		if (y - 1 >= 0)
-			if (collision[curPos - 2 - 8] != ally)
+			if (collision[curPos - 2 - 8] != ally || collision[curPos - 16 - 1] != ally + 2)
 				moveLoc.push_back(std::make_pair(x - 2, y - 1));
 		// Left Down (2 Left, 1 Down == - 2 + 8)
 		if (y + 1 < 8)
-			if (collision[curPos - 2 + 8] != ally)
+			if (collision[curPos - 2 + 8] != ally || collision[curPos - 16 - 1] != ally + 2)
 				moveLoc.push_back(std::make_pair(x - 2, y + 1));
 	}
 
@@ -320,48 +324,57 @@ void Knight::updateZones(int curPlayer, int* collision, bool* oldZone) {
 	int enemy = curPlayer == 0 ? 2 : 1;
 	int ally = curPlayer + 1;
 
+	//Top
 	if (y - 2 >= 0) {
 		// Top Left (2 Up, 1 Left == - 16 - 1)
 		if (x - 1 >= 0)
-			if (collision[pPos - 16 - 1] != ally && !oldZone[pPos - 16 - 1])
-				oldZone[pPos - 16 - 1] = true;
+			if (collision[pPos - 16 - 1] != ally || collision[pPos - 16 - 1] != ally + 2)
+				if (!oldZone[pPos - 16 - 1])
+					oldZone[pPos - 16 - 1] = true;
 		// Top Right (2 Up, 1 Right == - 16 + 1)
 		if (x + 1 < 8)
-			if (collision[pPos - 16 + 1] != ally && !oldZone[pPos - 16 + 1])
-				oldZone[pPos - 16 + 1] = true;
+			if (collision[pPos - 16 + 1] != ally || collision[pPos - 16 + 1] != ally + 2)
+				if (!oldZone[pPos - 16 + 1])
+					oldZone[pPos - 16 + 1] = true;
 	}
-
+	// Right
 	if (x + 2 < 8) {
 		// Right Up (2 Right, 1 Up == + 2 - 8)
 		if (y - 1 >= 0)
-			if (collision[pPos + 2 - 8] != ally && !oldZone[pPos + 2 - 8])
-				oldZone[pPos + 2 - 8] = true;
+			if (collision[pPos + 2 - 8] != ally || collision[pPos + 2 - 8] != ally + 2)
+				if (!oldZone[pPos + 2 - 8])
+					oldZone[pPos + 2 - 8] = true;
 		// Right Down (2 Right, 1 Down == + 2 + 8)
 		if (y + 1 < 8)
-			if (collision[pPos + 2 + 8] != ally && !oldZone[pPos + 2 + 8])
-				oldZone[pPos + 2 + 8] = true;
+			if (collision[pPos + 2 + 8] != ally || collision[pPos + 2 + 8] != ally + 2)
+				if (!oldZone[pPos + 2 + 8])
+					oldZone[pPos + 2 + 8] = true;
 	}
-
+	// Bot
 	if (y + 2 < 8) {
 		// Bottom Left (2 Down, 1 Left == + 16 - 1)
 		if (x - 1 >= 0)
-			if (collision[pPos + 16 - 1] != ally && !oldZone[pPos + 16 - 1])
-				oldZone[pPos + 16 - 1] = true;
+			if (collision[pPos + 16 - 1] != ally || collision[pPos + 16 - 1] != ally + 2)
+				if (!oldZone[pPos + 16 - 1])
+					oldZone[pPos + 16 - 1] = true;
 		// Top Right (2 Down, 1 Right == + 16 + 1)
 		if (x + 1 < 8)
-			if (collision[pPos + 16 + 1] != ally && !oldZone[pPos + 16 + 1])
-				oldZone[pPos + 16 + 1] = true;
+			if (collision[pPos + 16 + 1] != ally || collision[pPos + 16 + 1] != ally + 2)
+				if (!oldZone[pPos + 16 + 1])
+					oldZone[pPos + 16 + 1] = true;
 	}
-
+	// Left
 	if (x - 2 >= 0) {
 		// Left Up (2 Left, 1 Up == - 2 - 8)
 		if (y - 1 >= 0)
-			if (collision[pPos - 2 - 8] != ally && !oldZone[pPos - 2 - 8])
-				oldZone[pPos - 2 - 8] = true;
+			if (collision[pPos - 2 - 8] != ally || collision[pPos - 2 - 8] != ally + 2)
+				if (!oldZone[pPos - 2 - 8])
+					oldZone[pPos - 2 - 8] = true;
 		// Left Down (2 Left, 1 Down == - 2 + 8)
 		if (y + 1 < 8)
-			if (collision[pPos - 2 + 8] != ally && !oldZone[pPos - 2 + 8])
-				oldZone[pPos - 2 + 8] = true;
+			if (collision[pPos - 2 + 8] != ally || collision[pPos - 2 + 8] != ally + 2)
+				if (!oldZone[pPos - 2 + 8])
+					oldZone[pPos - 2 + 8] = true;
 	}
 }
 
@@ -371,7 +384,7 @@ void Knight::updateZones(int curPlayer, int* collision, bool* oldZone) {
 
 // Inherits orignal constructor
 // If additional setup is needed for this piece add in
-Bishop::Bishop(int nx, int ny) : cPiece(nx, ny) {};
+Bishop::Bishop(int nx, int ny, int ntype) : cPiece(nx, ny, ntype) {};
 
 std::vector<std::pair<int, int>> Bishop::movement(int curPlayer, int* collision, bool* checkZones = nullptr) {
 	// return movement vector
@@ -388,14 +401,14 @@ std::vector<std::pair<int, int>> Bishop::movement(int curPlayer, int* collision,
 	for (int i = 1; i <= x && i <= y; i++) {
 		checkPos = curPos - (i * (8 + 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
 			// Space is valid
 			moveLoc.push_back(std::make_pair(x - i, y - i));
 			// Enemy Collision
-			if (collision[checkPos] == enemy)
+			if (collision[checkPos] == enemy || collision[checkPos] == enemy + 2)
 				break;
 		}
 	}
@@ -404,14 +417,14 @@ std::vector<std::pair<int, int>> Bishop::movement(int curPlayer, int* collision,
 	for (int i = 1; i < 8 - x && i <= y; i++) {
 		checkPos = curPos - (i * (8 - 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
 			// Space is valid
 			moveLoc.push_back(std::make_pair(x + i, y - i));
 			// Enemy Collision
-			if (collision[checkPos] == enemy)
+			if (collision[checkPos] == enemy || collision[checkPos] == enemy + 2)
 				break;
 		}
 	}
@@ -420,14 +433,14 @@ std::vector<std::pair<int, int>> Bishop::movement(int curPlayer, int* collision,
 	for (int i = 1; i <= x && i < 8 - y; i++) {
 		checkPos = curPos + (i * (8 - 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
 			// Space is valid
 			moveLoc.push_back(std::make_pair(x - i, y + i));
 			// Enemy Collision
-			if (collision[checkPos] == enemy)
+			if (collision[checkPos] == enemy || collision[checkPos] == enemy + 2)
 				break;
 		}
 	}
@@ -436,14 +449,14 @@ std::vector<std::pair<int, int>> Bishop::movement(int curPlayer, int* collision,
 	for (int i = 1; i < 8 - x && i < 8 - y; i++) {
 		checkPos = curPos + (i * (8 + 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
 			// Space is valid
 			moveLoc.push_back(std::make_pair(x + i, y + i));
 			// Enemy Collision
-			if (collision[checkPos] == enemy)
+			if (collision[checkPos] == enemy || collision[checkPos] == enemy + 2)
 				break;
 		}
 	}
@@ -464,7 +477,7 @@ void Bishop::updateZones(int curPlayer, int* collision, bool* oldZone) {
 	for (int i = 1; i <= x && i <= y; i++) {
 		checkPos = pPos - (i * (8 + 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -481,7 +494,7 @@ void Bishop::updateZones(int curPlayer, int* collision, bool* oldZone) {
 	for (int i = 1; i < 8 - x && i <= y; i++) {
 		checkPos = pPos - (i * (8 - 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -498,7 +511,7 @@ void Bishop::updateZones(int curPlayer, int* collision, bool* oldZone) {
 	for (int i = 1; i <= x && i < 8 - y; i++) {
 		checkPos = pPos + (i * (8 - 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -515,7 +528,7 @@ void Bishop::updateZones(int curPlayer, int* collision, bool* oldZone) {
 	for (int i = 1; i < 8 - x && i < 8 - y; i++) {
 		checkPos = pPos + (i * (8 + 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -535,7 +548,7 @@ void Bishop::updateZones(int curPlayer, int* collision, bool* oldZone) {
 
 // Inherits orignal constructor
 // If additional setup is needed for this piece add in
-Queen::Queen(int nx, int ny) : cPiece(nx, ny) {};
+Queen::Queen(int nx, int ny, int ntype) : cPiece(nx, ny, ntype) {};
 
 std::vector<std::pair<int, int>> Queen::movement(int curPlayer, int* collision, bool* checkZones = nullptr) {
 	// return movement vector
@@ -554,7 +567,7 @@ std::vector<std::pair<int, int>> Queen::movement(int curPlayer, int* collision, 
 		int checkLoc = curPos - (8 * i);
 
 		// Check Collision
-		if (collision[checkLoc] == ally)
+		if (collision[checkLoc] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -562,7 +575,7 @@ std::vector<std::pair<int, int>> Queen::movement(int curPlayer, int* collision, 
 			moveLoc.push_back(std::make_pair(x, y - i));
 
 			// Enemy Collision
-			if (collision[checkLoc] == enemy)
+			if (collision[checkLoc] == enemy || collision[checkPos] == enemy + 2)
 				break;
 		}
 	}
@@ -571,14 +584,14 @@ std::vector<std::pair<int, int>> Queen::movement(int curPlayer, int* collision, 
 	for (int i = 1; i < 8 - x && i <= y; i++) {
 		checkPos = curPos - (i * (8 - 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
 			// Space is valid
 			moveLoc.push_back(std::make_pair(x + i, y - i));
 			// Enemy Collision
-			if (collision[checkPos] == enemy)
+			if (collision[checkPos] == enemy || collision[checkPos] == enemy + 2)
 				break;
 		}
 	}
@@ -588,7 +601,7 @@ std::vector<std::pair<int, int>> Queen::movement(int curPlayer, int* collision, 
 		int checkLoc = curPos + i;
 
 		// Check ally Collision
-		if (collision[checkLoc] == ally)
+		if (collision[checkLoc] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -596,7 +609,7 @@ std::vector<std::pair<int, int>> Queen::movement(int curPlayer, int* collision, 
 			moveLoc.push_back(std::make_pair(x + i, y));
 
 			// Enemy Collision
-			if (collision[checkLoc] == enemy)
+			if (collision[checkLoc] == enemy || collision[checkPos] == enemy + 2)
 				break;
 		}
 	}
@@ -605,14 +618,14 @@ std::vector<std::pair<int, int>> Queen::movement(int curPlayer, int* collision, 
 	for (int i = 1; i < 8 - x && i < 8 - y; i++) {
 		checkPos = curPos + (i * (8 + 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
 			// Space is valid
 			moveLoc.push_back(std::make_pair(x + i, y + i));
 			// Enemy Collision
-			if (collision[checkPos] == enemy)
+			if (collision[checkPos] == enemy || collision[checkPos] == enemy + 2)
 				break;
 		}
 	}
@@ -622,7 +635,7 @@ std::vector<std::pair<int, int>> Queen::movement(int curPlayer, int* collision, 
 		int checkLoc = curPos + (8 * i);
 
 		// Check Collision
-		if (collision[checkLoc] == ally)
+		if (collision[checkLoc] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -630,7 +643,7 @@ std::vector<std::pair<int, int>> Queen::movement(int curPlayer, int* collision, 
 			moveLoc.push_back(std::make_pair(x, y + i));
 
 			// Enemy Collision
-			if (collision[checkLoc] == enemy)
+			if (collision[checkLoc] == enemy || collision[checkPos] == enemy + 2)
 				break;
 		}
 	}
@@ -639,14 +652,14 @@ std::vector<std::pair<int, int>> Queen::movement(int curPlayer, int* collision, 
 	for (int i = 1; i <= x && i < 8 - y; i++) {
 		checkPos = curPos + (i * (8 - 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
 			// Space is valid
 			moveLoc.push_back(std::make_pair(x - i, y + i));
 			// Enemy Collision
-			if (collision[checkPos] == enemy)
+			if (collision[checkPos] == enemy || collision[checkPos] == enemy + 2)
 				break;
 		}
 	}
@@ -656,7 +669,7 @@ std::vector<std::pair<int, int>> Queen::movement(int curPlayer, int* collision, 
 		int checkLoc = curPos - i;
 
 		// Check Collision
-		if (collision[checkLoc] == ally)
+		if (collision[checkLoc] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -664,7 +677,7 @@ std::vector<std::pair<int, int>> Queen::movement(int curPlayer, int* collision, 
 			moveLoc.push_back(std::make_pair(x - i, y));
 
 			// Enemy Collision
-			if (collision[checkLoc] == enemy)
+			if (collision[checkLoc] == enemy || collision[checkPos] == enemy + 2)
 				break;
 		}
 	}
@@ -673,14 +686,14 @@ std::vector<std::pair<int, int>> Queen::movement(int curPlayer, int* collision, 
 	for (int i = 1; i <= x && i <= y; i++) {
 		checkPos = curPos - (i * (8 + 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
 			// Space is valid
 			moveLoc.push_back(std::make_pair(x - i, y - i));
 			// Enemy Collision
-			if (collision[checkPos] == enemy)
+			if (collision[checkPos] == enemy || collision[checkPos] == enemy + 2)
 				break;
 		}
 	}
@@ -702,7 +715,7 @@ void Queen::updateZones(int curPlayer, int* collision, bool* oldZone) {
 		checkPos = pPos - (8 * i);
 
 		// Check Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -720,7 +733,7 @@ void Queen::updateZones(int curPlayer, int* collision, bool* oldZone) {
 		checkPos = pPos - (i * (8 - 1));
 
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -738,7 +751,7 @@ void Queen::updateZones(int curPlayer, int* collision, bool* oldZone) {
 		checkPos = pPos + i;
 
 		// Check Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -755,7 +768,7 @@ void Queen::updateZones(int curPlayer, int* collision, bool* oldZone) {
 	for (int i = 1; i < 8 - x && i < 8 - y; i++) {
 		checkPos = pPos + (i * (8 + 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -773,7 +786,7 @@ void Queen::updateZones(int curPlayer, int* collision, bool* oldZone) {
 		checkPos = pPos + (8 * i);
 
 		// Check Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -790,7 +803,7 @@ void Queen::updateZones(int curPlayer, int* collision, bool* oldZone) {
 	for (int i = 1; i <= x && i < 8 - y; i++) {
 		checkPos = pPos + (i * (8 - 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -808,7 +821,7 @@ void Queen::updateZones(int curPlayer, int* collision, bool* oldZone) {
 		checkPos = pPos - i;
 
 		// Check Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -825,7 +838,7 @@ void Queen::updateZones(int curPlayer, int* collision, bool* oldZone) {
 	for (int i = 1; i <= x && i <= y; i++) {
 		checkPos = pPos - (i * (8 + 1));
 		//Check for Ally Collision
-		if (collision[checkPos] == ally)
+		if (collision[checkPos] == ally || collision[checkPos] == ally + 2)
 			break;
 
 		else {
@@ -844,8 +857,10 @@ void Queen::updateZones(int curPlayer, int* collision, bool* oldZone) {
 // ######################### KING ################################### //
 // Call base constructor to initialize first varibles
 // Additional Setup afterwards
-King::King(int nx, int ny, bool fm) : cPiece(nx, ny) {
+King::King(int nx, int ny, int ntype, bool fm, bool cL, bool cR) : cPiece(nx, ny, ntype) {
 	firstMove = fm;
+	castleL = cL;
+	castleR = cR;
 }
 
 std::vector<std::pair<int, int>> King::movement(int curPlayer, int* collision, bool* checkZones) {
@@ -907,6 +922,18 @@ std::vector<std::pair<int, int>> King::movement(int curPlayer, int* collision, b
 	if (x - 1 >= 0 && y - 1 >= 0)
 		if (collision[checkPos] != ally && !checkZones[checkPos])
 			moveLoc.push_back(std::make_pair(x - 1, y - 1));
+
+
+	// Castling Movement
+	if (firstMove) {
+		if (castleL) {
+			
+		}
+
+		if (castleR) {
+			
+		}
+	}
 
 	return moveLoc;
 }

@@ -8,9 +8,10 @@ class cPiece {
 public:
 	int x;
 	int y;
+	int type;
 
 	// Constructor
-	cPiece(int nx, int ny);
+	cPiece(int nx, int ny, int ntype);
 
 	// Override functions
 	virtual std::vector<std::pair<int, int>> movement(int curPlayer, int* collision, bool* checkZones) { return {std::make_pair(1, 1)}; };
@@ -22,7 +23,7 @@ class Pawn : public cPiece {
 	bool firstMove;
 public:
 	// Additional constructor setup
-	Pawn(int nx, int ny, bool fm);
+	Pawn(int nx, int ny, int ntype, bool fm = false);
 
 protected:
 	std::vector<std::pair<int, int>> movement(int curPlayer, int* collision, bool* checkZones) override;
@@ -30,10 +31,11 @@ protected:
 };
 
 class Rook : public cPiece {
-	bool firstMove;
 public:
+	bool firstMove;
+
 	// Additional constructor setup
-	Rook(int nx, int ny, bool fm);
+	Rook(int nx, int ny, int ntype, bool fm = false);
 
 protected:
 	std::vector<std::pair<int, int>> movement(int curPlayer, int* collision, bool* checkZones) override;
@@ -43,7 +45,7 @@ protected:
 class Knight : public cPiece {
 public:
 	// Constructor
-	Knight(int nx, int ny);
+	Knight(int nx, int ny, int ntype);
 
 protected:
 	std::vector<std::pair<int, int>> movement(int curPlayer, int* collision, bool* checkZones) override;
@@ -53,7 +55,7 @@ protected:
 class Bishop : public cPiece {
 public:
 	// Constructor
-	Bishop(int nx, int ny);
+	Bishop(int nx, int ny, int ntype);
 
 protected:
 	std::vector<std::pair<int, int>> movement(int curPlayer, int* collision, bool* checkZones) override;
@@ -63,7 +65,7 @@ protected:
 class Queen : public cPiece {
 public:
 	// Constructor
-	Queen(int nx, int ny);
+	Queen(int nx, int ny, int ntype);
 
 protected:
 	std::vector<std::pair<int, int>> movement(int curPlayer, int* collision, bool* checkZones) override;
@@ -71,12 +73,19 @@ protected:
 };
 
 class King : public cPiece {
+	// Used for Castling
 	bool firstMove;
+	bool castleL = true;
+	bool castleR = true;
+
 public:
 	// Additional constructor setup
-	King(int nx, int ny, bool fm);
+	King(int nx, int ny, int ntype, bool fm = false, bool cL = false, bool cR = false);
 
 protected:
+	// Polymorph
 	std::vector<std::pair<int, int>> movement(int curPlayer, int* collision, bool* checkZones) override;
 	void updateZones(int curPlayer, int* collision, bool* oldZone) override;
+
+	// Additional functions
 };
